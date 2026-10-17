@@ -186,6 +186,48 @@ for (const [k, style] of STYLE_ORDER.entries()) {
 	console.log(`sidechain: drums at sample ${first}, zero-crossing cut ${inStep.toFixed(2)} of peak cut, ${peaks} cuts / ${troughs} passes, gap ${gap.toFixed(2)}`);
 }
 
+// A restart (✦ surprise while playing) plays from the first beat at once, and
+// the old song's ringing notes fade within the restart fade instead of
+// carrying on into the new start.
+{
+	const song = new Song(SR, { sources: new Map() });
+	song.handle({ type: 'tempo', tempo: [1, 5], swing: 0 });
+	const pad = { engine: 'pad', params: { ...instrumentDefaults('pad'), release: 5 }, follow: false, octave: 0, gate: 1, active: true };
+	song.handle({ type: 'layer', index: 0, layer: { ...pad, pattern: { rate: 1, length: 4, notes: [[0, 0, 4, 0.8, 1]] } } });
+	song.handle({ type: 'play' });
+	const outputs = [...Array.from({ length: 8 }, () => [new Float32Array(128), new Float32Array(128)]), [new Float32Array(128)]];
+	const run = (seconds, each) => {
+		for (let pos = 0; pos < seconds * SR; pos += 128) {
+			song.render(outputs, 128);
+			each?.(pos);
+		}
+	};
+	let before = 0;
+	run(2.5, (pos) => {
+		if (pos < 2.3 * SR) return;
+		for (let i = 0; i < 128; i++) before = Math.max(before, Math.abs(outputs[0][0][i]));
+	});
+	check(before > 0.01, 'the old song should be sounding before the restart');
+	// The new song is silent until its third beat, so anything heard before then is the old one.
+	song.handle({ type: 'pattern', index: 0, pattern: { rate: 1, length: 4, notes: [[2, 0, 1, 0.8, 1]] } });
+	song.handle({ type: 'restart' });
+	let tail = 0;
+	run(0.5, (pos) => {
+		if (pos < 0.06 * SR) return;
+		for (let i = 0; i < 128; i++) tail = Math.max(tail, Math.abs(outputs[0][0][i]), Math.abs(outputs[0][1][i]));
+	});
+	check(tail < 1e-4, `the old song still sounds after a restart (${tail.toExponential(1)})`);
+	const beat = song.ctx.beat;
+	check(Math.abs(beat - (0.5 * tempoBpm([1, 5])) / 60) < 0.01, `restart should start the song from its first beat, not ${beat.toFixed(3)}`);
+	song.takeNotes();
+	song.handle({ type: 'pattern', index: 0, pattern: { rate: 1, length: 4, notes: [[0, 0, 1, 0.8, 1]] } });
+	song.handle({ type: 'restart' });
+	song.render(outputs, 128);
+	const first = song.takeNotes();
+	check(first.length === 1 && first[0].offset === 0, 'a restarted song should play its first beat at once');
+	console.log(`restart: old song at ${before.toFixed(3)} before, ${tail.toExponential(1)} 60 ms after; first beat at once`);
+}
+
 // The balance judges a sparse part by its notes: the same phrase heard once in
 // four bars measures within 1.5 dB of it played every bar.
 {

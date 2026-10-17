@@ -164,12 +164,21 @@ export class App {
 
 	// --- Composition actions ---------------------------------------------------
 
-	// A whole new song, playing at once: a surprise should be heard.
+	// A whole new song, heard at once from its first beat.
 	surprise(style = this.style) {
 		const comp = generateComposition(undefined, style || null);
 		this.load(comp);
 		this.flow.surprised();
-		if (!this.audio.playing) this.togglePlay(true);
+		if (this.audio.playing) this.restart();
+		else this.togglePlay(true);
+	}
+
+	// Plays the song from its first beat; the new song reaches the audio first.
+	restart() {
+		this.audio.apply(this.comp);
+		this.audio.restart();
+		this.lastBar = -1;
+		this.notify();
 	}
 
 	select(index) {

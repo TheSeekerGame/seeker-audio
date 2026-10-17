@@ -245,6 +245,12 @@ export class AudioEngine {
 		this.post({ type: 'play' });
 	}
 
+	// From the first beat again, fading out what was sounding.
+	restart() {
+		this.playing = true;
+		this.post({ type: 'restart' });
+	}
+
 	stop() {
 		this.playing = false;
 		this.post({ type: 'stop' });

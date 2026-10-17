@@ -179,6 +179,9 @@ export class Song {
 				this.ctx.playing = true;
 				this.preroll = true;
 				break;
+			case 'restart':
+				this.restart();
+				break;
 			case 'stop':
 				this.stop();
 				break;
@@ -222,6 +225,24 @@ export class Song {
 		layer.engine.setParams(spec.params || {});
 		layer.setPattern(spec.pattern);
 		this.applyFlags(layer, spec);
+	}
+
+	// Plays from the first beat again. Whatever was sounding fades out within
+	// FADE_SECONDS instead of ringing into the new start.
+	restart() {
+		for (const layer of this.layers) {
+			// A layer already fading an old instrument has a fresh, silent one.
+			if (!layer || layer.removing || layer.retired) continue;
+			const fresh = createEngine(layer.engineId, this.sr, this.ctx);
+			fresh.setParams(layer.engine.params);
+			layer.engine.allOff();
+			layer.retired = layer.engine;
+			layer.retiredGain = 1;
+			layer.engine = fresh;
+		}
+		this.ctx.beat = 0;
+		this.ctx.playing = true;
+		this.preroll = true;
 	}
 
 	removeLayer(index) {
