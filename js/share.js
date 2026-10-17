@@ -1,7 +1,9 @@
-// Share links carry the whole song in the URL fragment, so a static site can
-// reproduce any song with no server. Two forms, and a link uses the shorter:
+// Share links carry the whole song in the address (?s=…), so a static site can
+// reproduce any song with no server, and every song has an address of its own
+// that link previews fetch fresh. Links with the song in the fragment (#s=…)
+// still open. Two forms, and a link uses the shorter:
 //
-//   seed  "g1.7.2kq8f0.k3x1[.patch]": a song made by ✦ is rebuilt from its
+//   seed  "g2.7.2kq8f0.k3x1[.patch]": a song made by ✦ is rebuilt from its
 //         generator version, style, and seed; the four characters after the
 //         seed fingerprint the generated song, so a link from an older
 //         generator is recognized. Edits since then travel as a patch.
@@ -271,16 +273,17 @@ export async function decode(text) {
 }
 
 export function songUrl(payload) {
-	return `${location.origin}${location.pathname}#s=${payload}`;
+	return `${location.origin}${location.pathname}?s=${payload}`;
 }
 
-export function payloadFromHash(hash = location.hash) {
-	const match = /[#&]s=([A-Za-z0-9_.-]+)/.exec(hash);
+// The song in an address, from its query or its fragment.
+export function payloadFromLocation(loc = location) {
+	const match = /[?&#]s=([A-Za-z0-9_.-]+)/.exec(`${loc.search}${loc.hash}`);
 	return match ? match[1] : null;
 }
 
 // The post is the credit, with the song's link on a line of its own.
 export function xIntentUrl(url) {
-	const text = `made with @TheSeekerGame 👁️\n${url}`;
+	const text = `made with @TheSeekerGame\n${url}`;
 	return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
 }

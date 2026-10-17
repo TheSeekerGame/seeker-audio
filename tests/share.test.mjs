@@ -2,7 +2,7 @@
 // Run with `node tests/share.test.mjs`.
 import { generateComposition, STYLE_ORDER } from '../js/generate.js';
 import { cleanComposition, clone } from '../js/state.js';
-import { encode, encodeFull, encodeStored, decode, pack } from '../js/share.js';
+import { encode, encodeFull, encodeStored, decode, pack, payloadFromLocation } from '../js/share.js';
 import { INSTRUMENTS, INSTRUMENT_ORDER, EFFECTS, EFFECT_ORDER } from '../js/instruments.js';
 import { ROLES } from '../js/state.js';
 import { Rng } from '../js/rng.js';
@@ -72,6 +72,12 @@ check(Math.max(...sizes.seed) <= 24, 'seed links should stay under 25 characters
 	const old = await decode(parts.join('.'));
 	check(old.outdated === true && old.layers.length === comp.layers.length, 'outdated seed link should open and be flagged');
 }
+
+// Songs open from the query, where links put them, and from the fragment, where earlier links did.
+for (const loc of [{ search: '?s=g2.8.39u.afkl', hash: '' }, { search: '', hash: '#s=g2.8.39u.afkl' }, { search: '?ref=x&s=g2.8.39u.afkl', hash: '' }]) {
+	check(payloadFromLocation(loc) === 'g2.8.39u.afkl', `song not found in ${loc.search}${loc.hash}`);
+}
+check(payloadFromLocation({ search: '', hash: '' }) === null, 'an address without a song should give none');
 
 // Links in the first full format still open.
 {

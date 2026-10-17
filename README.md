@@ -55,9 +55,9 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-The live site is served by GitHub Pages from the `main` branch of this repository, so pushing to `main` publishes it. To host it elsewhere, serve the repository root from any static host and change the `og:url`, `og:image`, and `twitter:image` tags in `index.html` to the new address; link previews need absolute image URLs.
+The live site is served by GitHub Pages from the `main` branch of this repository, so pushing to `main` publishes it. To host it elsewhere, serve the repository root from any static host and change the `og:image` and `twitter:image` tags in `index.html` to the new address; link previews need absolute image URLs. The page deliberately has no `og:url`, so a preview belongs to each song's own address rather than to the site.
 
-Share links put the song in the URL fragment (`#s=…`), which never reaches the server, and use the shorter of two forms:
+Share links put the song in the address's query (`?s=…`), so every song has its own address and link previews on X and in chats fetch each one fresh; links with the song in the fragment (`#s=…`) still open. A link uses the shorter of two forms:
 
 - **Seed links** (`g2.7.13oy3v8.tfc6`, about 15 characters). A song made by ✦ is rebuilt from the generator version, the style, and the seed. Four more characters fingerprint the generated song. Changes made since then travel as a patch that records only the positions that differ; a handful of edits adds about 60 characters. If the generator has changed since a link was made, it still opens as the closest song this version makes, with a note saying so.
 - **Full links** (about 400 characters). The whole song is packed into positional arrays: knob settings as integers on a grid of 200 positions, note loudness and chance in steps of 5%, and note steps as distances from the previous note. The result is compressed with `deflate-raw` and written as base64url.

@@ -8,14 +8,14 @@ import { Layers } from './ui/layers.js';
 import { Editor } from './ui/editor.js';
 import { h, toast } from './ui/dom.js';
 import { generateComposition } from './generate.js';
-import { decode, payloadFromHash } from './share.js';
+import { decode, payloadFromLocation } from './share.js';
 import { loadCurrent } from './storage.js';
 
 // A calm first song: a pad drone, bells, and a grain cloud in the Seeker mood.
 const FIRST_SONG = { seed: 595403, style: 'ambient' };
 
 async function initialSong() {
-	const payload = payloadFromHash();
+	const payload = payloadFromLocation();
 	if (payload) {
 		try {
 			return { comp: await decode(payload), from: 'link' };
@@ -116,7 +116,7 @@ async function boot() {
 	if (from === 'link') {
 		toast(linkMessage(comp));
 		// From here on the song lives in this browser; a reload keeps your edits.
-		history.replaceState(null, '', location.pathname + location.search);
+		history.replaceState(null, '', location.pathname);
 	}
 
 	// Audio can only start inside a user gesture; prepare it on the first touch.
@@ -124,13 +124,14 @@ async function boot() {
 	document.addEventListener('pointerdown', warm, { once: true, capture: true });
 	document.addEventListener('keydown', warm, { once: true, capture: true });
 
+	// A song link pasted while the page is open (only a fragment change keeps the page).
 	window.addEventListener('hashchange', async () => {
-		const payload = payloadFromHash();
+		const payload = payloadFromLocation();
 		if (!payload) return;
 		try {
 			const comp = await decode(payload);
 			app.load(comp);
-			history.replaceState(null, '', location.pathname + location.search);
+			history.replaceState(null, '', location.pathname);
 			toast(linkMessage(comp));
 		} catch {
 			toast('that link could not be read');
