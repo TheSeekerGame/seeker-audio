@@ -138,6 +138,12 @@ async function boot() {
 		}
 	});
 	window.seeker = app;
+	// Started: a later update may refresh this tab's files again (see index.html).
+	try {
+		sessionStorage.removeItem('seeker-refreshed');
+	} catch {
+		// Storage can be unavailable; the refresh then simply happens at most once.
+	}
 }
 
 boot();

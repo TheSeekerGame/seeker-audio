@@ -29,6 +29,45 @@
 		<div id="app" class="app">
 			<noscript style="padding: 24px; color: #a9a9b2">SEEKER needs JavaScript and Web Audio to make sound.</noscript>
 		</div>
+		<script>
+			// A browser that cached some files before an update and some after can
+			// hold two versions at once, and then SEEKER cannot start. Fetch fresh
+			// copies of every file once and reload; if it still cannot start, say
+			// so instead of leaving a black page. js/main.js sets window.seeker
+			// once it has started.
+			(function () {
+				var KEY = 'seeker-refreshed';
+				var handled = false;
+				function session(act) {
+					try {
+						return act(sessionStorage);
+					} catch (e) {
+						return null;
+					}
+				}
+				function failed() {
+					if (handled || window.seeker) return;
+					handled = true;
+					if (!session(function (s) { return s.getItem(KEY); })) {
+						session(function (s) { s.setItem(KEY, '1'); });
+						var urls = performance.getEntriesByType('resource').map(function (e) { return e.name; }).filter(function (u) { return u.indexOf(location.origin) === 0; });
+						urls.push(location.href);
+						Promise.all(urls.map(function (u) { return fetch(u, { cache: 'reload' }).catch(function () {}); })).then(function () { location.reload(); });
+						return;
+					}
+					var reload = document.createElement('button');
+					reload.className = 'btn primary';
+					reload.textContent = 'reload';
+					reload.onclick = function () { location.reload(); };
+					var note = document.createElement('div');
+					note.className = 'boot-failed';
+					note.append('SEEKER could not start. Reload to try again; if it keeps happening, this browser may be too old.', reload);
+					document.getElementById('app').replaceChildren(note);
+				}
+				window.addEventListener('error', failed);
+				window.addEventListener('unhandledrejection', failed);
+			})();
+		</script>
 		<script type="module" src="js/main.js"></script>
 	</body>
 </html>

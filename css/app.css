@@ -74,6 +74,21 @@ button {
 	height: 100dvh;
 }
 
+/* Shown only when the app cannot start (see index.html). */
+.boot-failed {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 24px;
+	min-height: 100dvh;
+	color: var(--text-2);
+	text-align: center;
+	max-width: 420px;
+	margin: 0 auto;
+}
+
 /* ---------- top bar ---------- */
 
 /* Song identity, the main path (the hero), and utilities on top; the song's
@@ -1396,9 +1411,7 @@ a.btn {
 		grid-template-areas: 'caption caption style' 'play surprise share';
 		gap: 8px;
 		padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-		background: #000000e6;
-		-webkit-backdrop-filter: blur(14px);
-		backdrop-filter: blur(14px);
+		background: var(--bg);
 		border-top: 1px solid var(--line);
 	}
 

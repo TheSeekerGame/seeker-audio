@@ -55,7 +55,7 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-The live site is served by GitHub Pages from the `main` branch of this repository, so pushing to `main` publishes it. To host it elsewhere, serve the repository root from any static host and change the `og:image` and `twitter:image` tags in `index.html` to the new address; link previews need absolute image URLs. The page deliberately has no `og:url`, so a preview belongs to each song's own address rather than to the site.
+The live site is served by GitHub Pages from the `main` branch of this repository, so pushing to `main` publishes it. Pages lets browsers keep each file for ten minutes, so just after a push a browser can hold files from two versions; if the app then cannot start, `index.html` fetches fresh copies of every file once and reloads, and if it still cannot start it says so. To host it elsewhere, serve the repository root from any static host and change the `og:image` and `twitter:image` tags in `index.html` to the new address; link previews need absolute image URLs. The page deliberately has no `og:url`, so a preview belongs to each song's own address rather than to the site.
 
 Share links put the song in the address's query (`?s=…`), so every song has its own address and link previews on X and in chats fetch each one fresh; links with the song in the fragment (`#s=…`) still open. A link uses the shorter of two forms:
 
