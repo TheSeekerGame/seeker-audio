@@ -1,0 +1,4 @@
+# Local reference material; not part of the app.
+references/
+.DS_Store
+node_modules/

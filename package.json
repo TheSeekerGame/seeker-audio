@@ -1,0 +1,11 @@
+{
+	"name": "seeker-studio",
+	"private": true,
+	"type": "module",
+	"description": "A browser music studio where every note is a harmonic of 48 Hz.",
+	"scripts": {
+		"test": "node tests/dsp.test.mjs && node tests/gen.test.mjs && node tests/share.test.mjs && node tests/stems.test.mjs",
+		"serve": "python3 -m http.server 8000"
+	},
+	"license": "MIT OR Apache-2.0"
+}
