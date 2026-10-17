@@ -336,7 +336,7 @@ export class Top {
 			}
 		};
 		const actions = [
-			h('a', { class: 'btn primary', href: xIntentUrl(app.comp, url), target: '_blank', rel: 'noopener' }, svg(ICONS.x), 'post on X'),
+			h('a', { class: 'btn primary', href: xIntentUrl(url), target: '_blank', rel: 'noopener' }, svg(ICONS.x), 'post on X'),
 			h('button', { class: 'btn', onclick: copy }, iconEl('copy'), 'copy link'),
 		];
 		if (navigator.share) {

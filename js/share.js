@@ -279,7 +279,8 @@ export function payloadFromHash(hash = location.hash) {
 	return match ? match[1] : null;
 }
 
-export function xIntentUrl(comp, url) {
-	const text = `"${comp.name}" — a song I made in SEEKER, where every note is a harmonic of 48 Hz. Listen and remix it:`;
+// The post text is only the credit; X adds the song's link after it.
+export function xIntentUrl(url) {
+	const text = 'made with @TheSeekerGame';
 	return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 }
