@@ -279,8 +279,8 @@ export function payloadFromHash(hash = location.hash) {
 	return match ? match[1] : null;
 }
 
-// The post text is only the credit; X adds the song's link after it.
+// The post is the credit, with the song's link on a line of its own.
 export function xIntentUrl(url) {
-	const text = 'made with @TheSeekerGame';
-	return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+	const text = `made with @TheSeekerGame 👁️\n${url}`;
+	return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
 }

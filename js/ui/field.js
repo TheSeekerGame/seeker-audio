@@ -17,8 +17,9 @@ export class Field {
 		this.center = h('button', { class: 'center', 'aria-label': 'play', title: 'play / stop (space)' }, svg(ICONS.play));
 		this.leftLabel = h('div', { class: 'corner left' });
 		this.rightLabel = h('div', { class: 'corner right' });
-		this.welcome = h('div', { class: 'welcome' }, h('b', {}, 'press play'), ' or ✦ surprise', h('br'), 'touch the dots to play notes');
-		this.el = h('div', { class: 'panel field' }, this.canvas, this.leftLabel, this.rightLabel, this.center);
+		// The next step on the main path (the phone dock says it instead).
+		this.caption = h('div', { class: 'caption', 'aria-hidden': 'true' });
+		this.el = h('div', { class: 'panel field' }, this.canvas, this.leftLabel, this.rightLabel, this.center, this.caption);
 		this.nodes = [];
 		this.flashes = [];
 		this.pulses = [];
@@ -26,10 +27,7 @@ export class Field {
 		this.hover = null;
 		this.layoutKey = '';
 		this.static = document.createElement('canvas');
-		this.center.addEventListener('click', () => {
-			this.dismissWelcome();
-			app.togglePlay();
-		});
+		this.center.addEventListener('click', () => app.togglePlay());
 		this.bindPointer();
 		new ResizeObserver(() => this.layout(true)).observe(this.el);
 		app.subscribe(() => this.update());
@@ -47,19 +45,13 @@ export class Field {
 		requestAnimationFrame(this.frame);
 	}
 
-	showWelcome() {
-		this.el.append(this.welcome);
-	}
-
-	dismissWelcome() {
-		this.welcome.remove();
-	}
-
 	update() {
 		const playing = this.app.audio.playing;
 		this.center.classList.toggle('on', playing);
 		this.center.replaceChildren(svg(playing ? ICONS.stop : ICONS.play));
 		this.center.setAttribute('aria-label', playing ? 'stop' : 'play');
+		this.center.classList.toggle('invite', this.app.flow.step === 'play');
+		if (this.caption.textContent !== this.app.flow.caption) this.caption.textContent = this.app.flow.caption;
 		const comp = this.app.comp;
 		const mood = moodFor(comp.palette);
 		this.leftLabel.textContent = `${mood ? mood.name : 'custom'} · ${comp.palette.length} notes`;
@@ -203,7 +195,6 @@ export class Field {
 			this.held.delete(event.pointerId);
 		};
 		canvas.addEventListener('pointerdown', (event) => {
-			this.dismissWelcome();
 			canvas.setPointerCapture(event.pointerId);
 			const [x, y] = point(event);
 			press(event, this.nodeAt(x, y));

@@ -17,7 +17,9 @@ Every pitch is `48 Hz × X / 2^N` for whole numbers X and N: a harmonic of 48 Hz
 
 ## Using it
 
-- **✦ surprise** writes a complete song. The style menu next to it chooses ambient, lo-fi, pulse, cinematic, minimal, chime, techno, house, drum & bass, breakbeat, or breakcore. The club styles sit on harmonic tempos that suit them (house at 118.13 or 123.75 BPM, techno at 129.38 or 135, breakbeat from 129.38 to 140.63, drum & bass at 168.75 or 174.38, breakcore from 180 to 202.5), with matching kits, bass lines, and chords. Breakbeat swings classic two-bar breaks; breakcore chops an amen-like break on a 32nd-note grid with rolls, stutters, and shifter glitches, under slow, wide chords.
+The main path is three buttons: **▶ play**, **✦ surprise** until a song feels right, and **share**. They sit at the top of the page, and on phones in a dock at the bottom of the screen, under the thumb. The next step is invited gently: its button breathes with a slow ring and a short caption names it. Play comes first, then surprise, then share once a song has played for 20 seconds; after a first share the invitations stop.
+
+- **✦ surprise** writes a complete song and starts playing it. The style menu next to it chooses ambient, lo-fi, pulse, cinematic, minimal, chime, techno, house, drum & bass, breakbeat, or breakcore. The club styles sit on harmonic tempos that suit them (house at 118.13 or 123.75 BPM, techno at 129.38 or 135, breakbeat from 129.38 to 140.63, drum & bass at 168.75 or 174.38, breakcore from 180 to 202.5), with matching kits, bass lines, and chords. Breakbeat swings classic two-bar breaks; breakcore chops an amen-like break on a 32nd-note grid with rolls, stutters, and shifter glitches, under slow, wide chords.
 - **The spiral** shows every pitch of the palette across six octaves (angle = place in the octave, distance = height). Notes glow as they sound. Press, hold, and slide across the dots to play the selected layer. The computer keyboard plays too: `z`–`/`, `a`–`;`, and `q`–`p` are three octaves.
 - **Layers** hold an instrument and a looping pattern. Each has mute, solo, and ✦ (new pattern and sound).
 - **Pattern** is a step grid labeled with each row's ratio. Click to add, drag to lengthen, click to remove; Shift-click changes loudness, Alt-click makes a note play only sometimes. *Follow harmony* moves the layer with the harmony strip.
@@ -28,7 +30,7 @@ Every pitch is `48 Hz × X / 2^N` for whole numbers X and N: a harmonic of 48 Hz
 - **Effects** adds up to four inserts per layer: resonator, shifter, filter, drive, chorus, lo-fi, tremolo, pump (ducking locked to the beat), and squash (three-band upward and downward compression that brings grit and fizz forward).
 - **Level and sends** holds each layer's volume, pan, space, echo, and **sidechain**: how deeply the drums' kick carves the layer (see below). **Space & mix** sets the shared reverb, echo, swing, and the song's loudness.
 - **Evolve** changes one layer slightly every four bars.
-- **Undo/redo**, **rec** (records what you hear to a 48 kHz WAV), **share** (copy link, post on X, or the system share sheet), and the menu (save to this browser, new song, export stems, about, keyboard).
+- **Undo/redo** (undo also brings back the song before a surprise), **rec** (records what you hear to a 48 kHz WAV), **share** (copy link, post on X, or the system share sheet), and the menu (save to this browser, new song, export stems, about, keyboard).
 
 ### Mix and loudness
 
@@ -73,6 +75,7 @@ js/state.js                 the composition model, validation, palette remapping
 js/generate.js              styles, harmony scoring, chord, melody, bass, arp, drum, and texture generators
 js/share.js, js/storage.js  link encoding, local library
 js/app.js                   state, undo history, audio bridge
+js/flow.js                  the main path (play, surprise, share) and which step to invite next
 js/audio/engine.js          browser audio graph: worklet node, layer strips with sidechain duck, master bus
 js/audio/balance.js         automatic balance: per-layer loudness measured in balance-worker.js
 js/audio/loudness.js        K-weighted and gated loudness meters (shared with the tests)

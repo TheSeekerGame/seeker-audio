@@ -9,7 +9,7 @@ import { Editor } from './ui/editor.js';
 import { h, toast } from './ui/dom.js';
 import { generateComposition } from './generate.js';
 import { decode, payloadFromHash } from './share.js';
-import { loadCurrent, prefs, setPref } from './storage.js';
+import { loadCurrent } from './storage.js';
 
 // A calm first song: a pad drone, bells, and a grain cloud in the Seeker mood.
 const FIRST_SONG = { seed: 595403, style: 'ambient' };
@@ -118,8 +118,6 @@ async function boot() {
 		// From here on the song lives in this browser; a reload keeps your edits.
 		history.replaceState(null, '', location.pathname + location.search);
 	}
-	if (!prefs().welcomed || from === 'new') field.showWelcome();
-	setPref('welcomed', true);
 
 	// Audio can only start inside a user gesture; prepare it on the first touch.
 	const warm = () => app.ensureAudio().catch(() => {});

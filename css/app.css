@@ -76,11 +76,13 @@ button {
 
 /* ---------- top bar ---------- */
 
-/* Song identity and actions on top, the transport beneath; one row on wide screens. */
+/* Song identity, the main path (the hero), and utilities on top; the song's
+   settings beneath. Narrower screens give the hero a row of its own, and
+   phones dock it at the bottom of the screen. */
 .top {
 	display: grid;
-	grid-template-columns: 1fr auto;
-	grid-template-areas: 'identity actions' 'transport transport';
+	grid-template-columns: 1fr auto 1fr;
+	grid-template-areas: 'identity hero utility' 'transport transport transport';
 	align-items: center;
 	gap: 10px 14px;
 	padding: 10px 14px;
@@ -89,7 +91,7 @@ button {
 
 .top-identity,
 .top-transport,
-.top-actions {
+.top-utility {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -103,21 +105,97 @@ button {
 .top-transport {
 	grid-area: transport;
 	flex-wrap: wrap;
+	justify-content: center;
 }
 
-.top-actions {
-	grid-area: actions;
+.top-utility {
+	grid-area: utility;
 	justify-content: flex-end;
 }
 
-@media (min-width: 1560px) {
+@media (max-width: 1100px) {
 	.top {
-		grid-template-columns: auto 1fr auto;
-		grid-template-areas: 'identity transport actions';
+		grid-template-columns: 1fr auto;
+		grid-template-areas: 'identity utility' 'hero hero' 'transport transport';
 	}
 
-	.top-transport {
+	.hero {
 		justify-content: center;
+	}
+}
+
+/* ---------- the main path: play, surprise, share ---------- */
+
+.hero {
+	grid-area: hero;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hero .play-btn {
+	position: relative;
+	width: 40px;
+	height: 40px;
+}
+
+.hero .play-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* While playing, stop stays quiet so ✦ surprise is the one bright button. */
+.hero .play-btn.on {
+	background: none;
+	color: var(--text);
+	border-color: var(--text-2);
+}
+
+.hero .btn {
+	position: relative;
+	height: 40px;
+}
+
+.hero .surprise {
+	padding: 0 22px;
+	font-size: 13px;
+}
+
+.hero .share {
+	padding: 0 18px;
+	color: var(--text);
+	border-color: var(--line-3);
+}
+
+.hero-caption {
+	display: none;
+}
+
+/* The next step on the main path breathes: a ring swells out and fades. */
+.invite::after {
+	content: '';
+	position: absolute;
+	inset: -1px;
+	border-radius: inherit;
+	pointer-events: none;
+	animation: invite 2.4s var(--ease) infinite;
+}
+
+@keyframes invite {
+	0% {
+		box-shadow: 0 0 0 0 #ffffff59;
+	}
+
+	70%,
+	100% {
+		box-shadow: 0 0 0 12px #ffffff00;
+	}
+}
+
+/* One play button invites at a time: the spiral's on larger screens. */
+@media (min-width: 641px) {
+	.hero .play-btn.invite::after {
+		display: none;
 	}
 }
 
@@ -187,12 +265,6 @@ button {
 	flex: 1;
 }
 
-.divider {
-	width: 1px;
-	height: 22px;
-	background: var(--line);
-	margin: 0 4px;
-}
 
 /* ---------- buttons ---------- */
 
@@ -1226,28 +1298,20 @@ a.btn {
 	font-size: 11px;
 }
 
-/* First-visit welcome */
+/* The next step on the main path, under the spiral. */
 
-.welcome {
+.field .caption {
 	position: absolute;
 	left: 50%;
-	bottom: 10px;
+	bottom: 12px;
 	transform: translateX(-50%);
-	text-align: center;
 	color: var(--text-2);
 	font-size: 11px;
-	line-height: 1.5;
-	padding: 6px 12px;
-	border-radius: 10px;
+	padding: 5px 12px;
+	border-radius: 999px;
 	background: #000c;
 	pointer-events: none;
 	white-space: nowrap;
-	animation: fade 1.2s;
-}
-
-.welcome b {
-	color: var(--text);
-	font-weight: 500;
 }
 
 /* ---------- small screens ---------- */
@@ -1285,18 +1349,101 @@ a.btn {
 
 @media (max-width: 640px) {
 	.top {
+		grid-template-columns: 1fr auto;
+		grid-template-areas: 'identity utility' 'transport transport';
 		gap: 8px;
 		padding: 10px;
 	}
 
-	.top {
-		grid-template-columns: 1fr;
-		grid-template-areas: 'identity' 'actions' 'transport';
+	/* The song's settings scroll sideways in one row. */
+	.top-transport {
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		overflow-x: auto;
+		scrollbar-width: none;
+		margin: 0 -10px;
+		padding: 0 10px 2px;
 	}
 
-	.top-actions {
-		justify-content: flex-start;
-		flex-wrap: wrap;
+	.top-transport::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* The row fades at its right edge, so it reads as scrollable. */
+	.top-transport {
+		-webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+		mask-image: linear-gradient(to right, #000 85%, transparent);
+	}
+
+	.top-utility .rec {
+		width: 30px;
+		padding: 0;
+	}
+
+	.top-transport > * {
+		flex: none;
+	}
+
+	/* The main path docks at the bottom, under the thumb. */
+	.hero {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 30;
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		grid-template-areas: 'caption caption style' 'play surprise share';
+		gap: 8px;
+		padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+		background: #000000e6;
+		-webkit-backdrop-filter: blur(14px);
+		backdrop-filter: blur(14px);
+		border-top: 1px solid var(--line);
+	}
+
+	.hero-caption {
+		display: block;
+		grid-area: caption;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--text-2);
+		font-size: 11px;
+	}
+
+	.hero .style {
+		grid-area: style;
+		height: 26px;
+		padding: 0 10px;
+		font-size: 11px;
+	}
+
+	.hero .play-btn {
+		grid-area: play;
+		width: 50px;
+		height: 50px;
+	}
+
+	.hero .surprise {
+		grid-area: surprise;
+		height: 50px;
+		font-size: 14px;
+	}
+
+	.hero .share {
+		grid-area: share;
+		height: 50px;
+	}
+
+	.field .caption,
+	.field .center.invite::after {
+		display: none;
+	}
+
+	.toast {
+		bottom: calc(124px + env(safe-area-inset-bottom));
 	}
 
 	.song-name {
@@ -1310,7 +1457,7 @@ a.btn {
 	}
 
 	.main {
-		padding: 10px;
+		padding: 10px 10px calc(126px + env(safe-area-inset-bottom));
 		gap: 10px;
 	}
 
@@ -1329,9 +1476,14 @@ a.btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	* {
+	*,
+	*::after {
 		animation: none !important;
 		transition: none !important;
+	}
+
+	.invite::after {
+		box-shadow: 0 0 0 4px #ffffff33;
 	}
 }
 

@@ -1,5 +1,7 @@
-// The top bar: song name, transport, tempo, root, mood, harmony, and the
-// song-level actions (surprise, undo, record, share, library).
+// The top bar: song name, the main path (play, ✦ surprise and its style,
+// share), undo, record, the library menu, and the song's tempo, root, mood,
+// and harmony. On phones the main path becomes a dock at the bottom of the
+// screen, under the thumb.
 
 import { h, iconEl, svg, ICONS, popover, closePopover, modal, toast } from './dom.js';
 import { TEMPOS, tempoIndex, tempoLabel, rootHz, ROOT_OCTAVES, indexRatio, ratioLabel } from '../tuning.js';
@@ -42,20 +44,24 @@ export class Top {
 		this.root = this.makeRoot();
 		this.mood = h('button', { class: 'btn select', title: 'mood: which harmonics the song uses', onclick: () => this.openMood() });
 		this.harmony = h('div', { class: 'harmony', title: 'harmony: each bar shifts the following layers along the palette' });
-		this.surprise = h('button', { class: 'btn primary', title: 'a whole new song', onclick: () => app.surprise() }, '✦ surprise');
-		this.style = h('button', { class: 'btn select', title: 'style for surprises', onclick: () => this.openStyle() });
+		this.surprise = h('button', { class: 'btn primary surprise', title: 'a whole new song', onclick: () => app.surprise() }, '✦ surprise');
+		this.style = h('button', { class: 'btn select style', title: 'style for surprises', onclick: () => this.openStyle() });
 		this.undo = h('button', { class: 'btn icon', title: 'undo (⌘Z)', 'aria-label': 'undo', onclick: () => app.undo() }, iconEl('undo'));
 		this.redo = h('button', { class: 'btn icon', title: 'redo (⇧⌘Z)', 'aria-label': 'redo', onclick: () => app.redo() }, iconEl('redo'));
-		this.rec = h('button', { class: 'btn rec', title: 'record what you hear to a WAV file', onclick: () => this.toggleRecord() }, iconEl('rec'), h('span', {}, 'rec'));
-		this.share = h('button', { class: 'btn', title: 'share a link to this song', onclick: () => this.openShare() }, iconEl('share'), h('span', { class: 'wide' }, 'share'));
+		this.rec = h('button', { class: 'btn rec', title: 'record what you hear to a WAV file', onclick: () => this.toggleRecord() }, iconEl('rec'), h('span', { class: 'wide' }, 'rec'));
+		this.share = h('button', { class: 'btn share', title: 'share a link to this song', onclick: () => this.openShare() }, iconEl('share'), h('span', {}, 'share'));
+		// The next step on the main path, said in a few words (shown in the phone dock).
+		this.caption = h('div', { class: 'hero-caption', 'aria-live': 'polite' });
+		this.hero = h('div', { class: 'hero' }, this.play, this.surprise, this.style, this.share, this.caption);
 		this.menu = h('button', { class: 'btn icon', title: 'songs and help', 'aria-label': 'menu', onclick: () => this.openMenu() }, iconEl('menu'));
 		this.meter = h('div', { class: 'out-meter', title: 'output level' }, h('i'), h('i'));
 		this.el = h(
 			'header',
 			{ class: 'top' },
 			h('div', { class: 'top-identity' }, h('div', { class: 'brand', title: 'every note is a harmonic of 48 Hz' }, h('b', {}, 'SEEKER'), h('small', {}, '48 hz')), this.name),
-			h('div', { class: 'top-transport' }, this.play, this.tempo, this.root, this.mood, this.harmony, this.evolve, this.meter),
-			h('div', { class: 'top-actions' }, this.surprise, this.style, h('div', { class: 'divider' }), this.undo, this.redo, this.rec, this.share, this.menu),
+			this.hero,
+			h('div', { class: 'top-utility' }, this.undo, this.redo, this.rec, this.menu),
+			h('div', { class: 'top-transport' }, this.tempo, this.root, this.mood, this.harmony, this.evolve, this.meter),
 		);
 		app.audio.on('meter', (m) => this.showMeter(m));
 		this.harmonyKey = '';
@@ -89,6 +95,11 @@ export class Top {
 		this.style.querySelector('svg').classList.add('caret');
 		this.undo.disabled = !this.app.history.length;
 		this.redo.disabled = !this.app.future.length;
+		const { step, caption } = this.app.flow;
+		this.play.classList.toggle('invite', step === 'play');
+		this.surprise.classList.toggle('invite', step === 'surprise');
+		this.share.classList.toggle('invite', step === 'share');
+		if (this.caption.textContent !== caption) this.caption.textContent = caption;
 		this.renderHarmony();
 	}
 
@@ -326,6 +337,8 @@ export class Top {
 
 	async openShare() {
 		const app = this.app;
+		app.flow.shared();
+		app.notify();
 		const url = songUrl(await encode(app.comp));
 		const copy = async () => {
 			try {

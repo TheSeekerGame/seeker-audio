@@ -3,6 +3,7 @@
 
 import { AudioEngine } from './audio/engine.js';
 import { Balancer } from './audio/balance.js';
+import { Flow } from './flow.js';
 import { Recorder } from './audio/recorder.js';
 import { cleanComposition, clone, isDrums, MAX_LAYERS, newLayer, LAYER_COLORS } from './state.js';
 import { generateComposition, generatePattern, evolvePattern, randomParams, pickEngine, roleOctave, fitRegister, sidechainFor } from './generate.js';
@@ -30,6 +31,7 @@ export class App {
 		this.version = 0;
 		// Measures layers from the start, so the balance is ready before the first note.
 		this.balancer = new Balancer((trims) => this.audio.setTrims(trims));
+		this.flow = new Flow(this);
 		this.balancer.update(this.comp);
 		this.audio.on('tick', (tick) => this.onTick(tick));
 		this.audio.on('ready', () => {
@@ -121,6 +123,7 @@ export class App {
 		this.comp = cleanComposition(comp);
 		this.selected = this.comp.layers.length ? 0 : -1;
 		this.lastBar = -1;
+		this.flow.songChanged();
 		this.changed();
 	}
 
@@ -138,6 +141,7 @@ export class App {
 			this.audio.apply(this.comp);
 			this.audio.play();
 			this.lastBar = -1;
+			this.flow.played();
 		} else {
 			this.audio.stop();
 		}
@@ -160,9 +164,12 @@ export class App {
 
 	// --- Composition actions ---------------------------------------------------
 
+	// A whole new song, playing at once: a surprise should be heard.
 	surprise(style = this.style) {
 		const comp = generateComposition(undefined, style || null);
 		this.load(comp);
+		this.flow.surprised();
+		if (!this.audio.playing) this.togglePlay(true);
 	}
 
 	select(index) {
