@@ -516,7 +516,7 @@ export function openAbout() {
 			'p',
 			{},
 			'SEEKER is part of The Seeker and is free and open source (MIT or Apache-2.0). ',
-			h('a', { href: 'https://github.com/TheSeekerGame/SeekerAudio', target: '_blank', rel: 'noopener', style: { color: 'var(--text)' } }, 'Source on GitHub'),
+			h('a', { href: 'https://github.com/TheSeekerGame/seeker-audio', target: '_blank', rel: 'noopener', style: { color: 'var(--text)' } }, 'Source on GitHub'),
 			'.',
 		),
 		h('div', { class: 'actions' }, h('button', { class: 'btn primary', onclick: () => close() }, 'close')),
