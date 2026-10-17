@@ -119,10 +119,11 @@ async function boot() {
 		history.replaceState(null, '', location.pathname);
 	}
 
-	// Audio can only start inside a user gesture; prepare it on the first touch.
-	const warm = () => app.ensureAudio().catch(() => {});
-	document.addEventListener('pointerdown', warm, { once: true, capture: true });
-	document.addEventListener('keydown', warm, { once: true, capture: true });
+	// Audio can only start, or come back after the browser paused it, inside a
+	// user gesture: every touch and key press makes sure it is running.
+	const wake = () => (app.audio.ctx ? app.audio.wake() : app.ensureAudio().catch(() => {}));
+	document.addEventListener('pointerdown', wake, { capture: true });
+	document.addEventListener('keydown', wake, { capture: true });
 
 	// A song link pasted while the page is open (only a fragment change keeps the page).
 	window.addEventListener('hashchange', async () => {

@@ -53,6 +53,7 @@ class FxProcessor extends AudioWorkletProcessor {
 	constructor(options) {
 		super();
 		const Effect = WORKLET_EFFECTS[options.processorOptions?.type];
+		this.Effect = Effect;
 		this.fx = Effect ? new Effect(sampleRate, shared) : null;
 		if (options.processorOptions?.params) this.fx?.setParams(options.processorOptions.params);
 		this.silence = new Float32Array(128);
@@ -76,6 +77,18 @@ class FxProcessor extends AudioWorkletProcessor {
 			return true;
 		}
 		this.fx.process(inL, inR, outL, outR, n);
+		// An invalid sample would stay in the browser's filters after this effect
+		// for good: drop the block and start the effect afresh.
+		for (let i = 0; i < n; i++) {
+			if (!(Math.abs(outL[i]) + Math.abs(outR[i]) < 64)) {
+				outL.fill(0);
+				if (outR !== outL) outR.fill(0);
+				const params = this.fx.params;
+				this.fx = new this.Effect(sampleRate, shared);
+				this.fx.setParams(params);
+				break;
+			}
+		}
 		return true;
 	}
 }
@@ -121,6 +134,11 @@ class MasterProcessor extends AudioWorkletProcessor {
 		if (input?.[0]) {
 			outL.set(input[0]);
 			outR.set(input[1] || input[0]);
+			// Invalid input never reaches the leveler or limiter.
+			for (let i = 0; i < n; i++) {
+				if (!(Math.abs(outL[i]) < 64)) outL[i] = 0;
+				if (!(Math.abs(outR[i]) < 64)) outR[i] = 0;
+			}
 		} else {
 			outL.fill(0);
 			outR.fill(0);

@@ -228,6 +228,56 @@ for (const [k, style] of STYLE_ORDER.entries()) {
 	console.log(`restart: old song at ${before.toFixed(3)} before, ${tail.toExponential(1)} 60 ms after; first beat at once`);
 }
 
+// Switching styles over and over (as ✦ surprise does) at both phone sample
+// rates never makes an invalid sample, so the instruments' safety net, which
+// drops a broken block and renews the instrument, never has to act.
+for (const rate of [44100, 48000]) {
+	const song = new Song(rate, { sources });
+	let renewed = 0;
+	const renew = song.renew.bind(song);
+	song.renew = (layer) => {
+		renewed++;
+		renew(layer);
+	};
+	const outputs = [...Array.from({ length: 8 }, () => [new Float32Array(128), new Float32Array(128)]), [new Float32Array(128)]];
+	const rng = new Rng(11);
+	let bad = 0;
+	song.handle({ type: 'play' });
+	for (let t = 0; t < 150; t++) {
+		const comp = generateComposition(rng.int(0, 1e9), STYLE_ORDER[rng.int(0, STYLE_ORDER.length - 1)]);
+		song.handle({ type: 'tuning', palette: comp.palette, root: comp.root });
+		song.handle({ type: 'tempo', tempo: comp.tempo, swing: comp.swing });
+		song.handle({ type: 'harmony', shifts: comp.harmony });
+		for (let i = 0; i < 8; i++) {
+			const l = comp.layers[i];
+			song.handle(l ? { type: 'layer', index: i, layer: { ...l, active: true } } : { type: 'remove', index: i });
+		}
+		song.handle({ type: 'restart' });
+		for (let b = Math.round((rng.range(0.05, 1) * rate) / 128); b > 0; b--) {
+			song.render(outputs, 128);
+			for (const out of outputs) for (const ch of out) for (let i = 0; i < 128; i++) if (!Number.isFinite(ch[i])) bad++;
+		}
+	}
+	check(bad === 0 && renewed === 0, `${rate} Hz style switches: ${bad} invalid samples, ${renewed} renewed instruments`);
+	console.log(`style switches at ${rate} Hz: clean`);
+}
+
+// A broken instrument never reaches the mix: its block is dropped and the
+// instrument starts afresh with the same settings.
+{
+	const song = new Song(SR, { sources: new Map() });
+	song.handle({ type: 'layer', index: 0, layer: { engine: 'keys', params: instrumentDefaults('keys'), pattern: { rate: 4, length: 4, notes: [[0, 0, 1, 0.8, 1]] }, active: true } });
+	song.handle({ type: 'play' });
+	const outputs = [...Array.from({ length: 8 }, () => [new Float32Array(128), new Float32Array(128)]), [new Float32Array(128)]];
+	const broken = song.layers[0].engine;
+	broken.process = (L, R, start, end) => L.fill(NaN, start, end);
+	song.render(outputs, 128);
+	const dropped = outputs[0][0].every((x) => x === 0);
+	song.render(outputs, 128);
+	check(dropped && song.layers[0].engine !== broken && outputs[0][0].every(Number.isFinite), 'a broken instrument should be dropped and renewed');
+	check(song.layers[0].engine.params.decay === broken.params.decay, 'a renewed instrument should keep its settings');
+}
+
 // The balance judges a sparse part by its notes: the same phrase heard once in
 // four bars measures within 1.5 dB of it played every bar.
 {

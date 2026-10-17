@@ -195,6 +195,8 @@ export class StringsEngine extends PolyEngine {
 	}
 
 	process(L, R, start, end) {
+		// Voices write the mono bus at their output positions, which reach as far as the output does.
+		if (this.mono.length < end) this.mono = new Float32Array(end);
 		this.mono.fill(0, start, end);
 		super.process(L, R, start, end);
 	}

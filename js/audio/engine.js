@@ -41,9 +41,8 @@ export class Strip {
 		this.duck = ctx.createGain();
 		this.sidechain = ctx.createGain();
 		this.sidechain.gain.value = 0;
-		song.connect(this.sidechain, MAX_LAYERS, 0);
 		this.sidechain.connect(this.duck.gain);
-		song.connect(this.input, index, 0);
+		this.attach(song, index);
 		this.fader = ctx.createGain();
 		this.fader.gain.value = 0;
 		this.panner = ctx.createStereoPanner();
@@ -60,6 +59,12 @@ export class Strip {
 		this.fxKey = '';
 		this.duck.connect(this.fader);
 		this.input.connect(this.duck);
+	}
+
+	// Takes this layer's audio and the sidechain from a song node.
+	attach(song, index) {
+		song.connect(this.sidechain, MAX_LAYERS, 0);
+		song.connect(this.input, index, 0);
 	}
 
 	// `trim` is the automatic balance's gain for this layer.
@@ -151,13 +156,21 @@ export class AudioEngine {
 	// Creates the audio context; must first be called from a user gesture.
 	start() {
 		if (this.starting) {
-			if (this.ctx?.state === 'suspended') this.ctx.resume();
+			this.wake();
 			return this.starting;
 		}
 		// Lets iOS play through the ringer switch, as a music app should.
 		if (navigator.audioSession) navigator.audioSession.type = 'playback';
 		this.starting = this.build();
 		return this.starting;
+	}
+
+	// Resumes audio the browser has paused: iOS pauses it for calls, alarms, and
+	// other apps ("interrupted"), and only lets it resume during a touch or
+	// once the interruption ends. Harmless while audio runs.
+	wake() {
+		const ctx = this.ctx;
+		if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
 	}
 
 	async build() {
@@ -168,11 +181,13 @@ export class AudioEngine {
 			ctx = new AudioContext({ latencyHint: 'interactive' });
 		}
 		this.ctx = ctx;
-		if (ctx.state === 'suspended') ctx.resume();
+		this.wake();
+		ctx.addEventListener('statechange', () => {
+			if (this.playing) this.wake();
+		});
 		await ctx.audioWorklet.addModule(WORKLET_URL);
 
-		this.song = songNode(ctx);
-		this.song.port.onmessage = (event) => this.onSongMessage(event.data);
+		this.song = this.makeSong();
 
 		this.masterBus = ctx.createGain();
 		this.glue = ctx.createDynamicsCompressor();
@@ -181,14 +196,7 @@ export class AudioEngine {
 		this.glue.ratio.value = 2.2;
 		this.glue.attack.value = 0.02;
 		this.glue.release.value = 0.25;
-		this.master = new AudioWorkletNode(ctx, 'seeker-master', {
-			numberOfInputs: 1,
-			numberOfOutputs: 1,
-			outputChannelCount: [2],
-			channelCount: 2,
-			channelCountMode: 'explicit',
-		});
-		this.master.port.onmessage = (event) => this.onMasterMessage(event.data);
+		this.master = this.makeMaster();
 		this.analyser = ctx.createAnalyser();
 		this.analyser.fftSize = 2048;
 		this.analyser.smoothingTimeConstant = 0.8;
@@ -211,6 +219,53 @@ export class AudioEngine {
 		this.sendSources();
 		this.emit('ready');
 		return this;
+	}
+
+	makeSong() {
+		const song = songNode(this.ctx);
+		song.port.onmessage = (event) => this.onSongMessage(event.data);
+		song.onprocessorerror = () => this.recover();
+		return song;
+	}
+
+	makeMaster() {
+		const master = new AudioWorkletNode(this.ctx, 'seeker-master', {
+			numberOfInputs: 1,
+			numberOfOutputs: 1,
+			outputChannelCount: [2],
+			channelCount: 2,
+			channelCountMode: 'explicit',
+		});
+		master.port.onmessage = (event) => this.onMasterMessage(event.data);
+		master.onprocessorerror = () => this.recover();
+		return master;
+	}
+
+	// A processor that fails is silenced by the browser for good, so the song
+	// and master processors are built anew and sent the song again. Three
+	// failures within a minute stop the attempts rather than loop.
+	recover() {
+		const now = performance.now();
+		this.failures = (this.failures || []).filter((t) => now - t < 60000);
+		if (this.failures.length >= 3) return;
+		this.failures.push(now);
+		const ctx = this.ctx;
+		this.song.disconnect();
+		this.song.port.onmessage = null;
+		this.song = this.makeSong();
+		this.strips.forEach((strip, i) => strip.attach(this.song, i));
+		this.glue.disconnect();
+		this.master.disconnect();
+		this.master.port.onmessage = null;
+		this.master = this.makeMaster();
+		this.glue.connect(this.master);
+		this.master.connect(ctx.destination);
+		this.master.connect(this.analyser);
+		this.sendSources();
+		const comp = this.applied;
+		this.applied = null;
+		if (comp) this.apply(comp);
+		if (this.playing) this.post({ type: 'play' });
 	}
 
 	sendSources() {

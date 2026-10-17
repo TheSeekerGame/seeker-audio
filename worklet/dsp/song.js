@@ -26,6 +26,8 @@ const LOOKAHEAD = 0.01;
 const GAP_ROWS = 2;
 // A kick at this level cuts sidechained layers completely.
 const SIDECHAIN_FULL = 0.87;
+// No instrument comes near this level; a sample beyond it (or not a number) is broken.
+const BROKEN_LEVEL = 64;
 
 // A fixed delay that returns a drum layer's early render to song time.
 class Lookahead {
@@ -410,7 +412,8 @@ export class Song {
 			const t = target[i];
 			env += (t - env) * (t > env ? attack : release);
 			const ring = sc[i] / SIDECHAIN_FULL;
-			const v = ring > 1 ? 1 : ring;
+			// Never more than a full cut, never anything but a number.
+			const v = ring > 1 ? 1 : ring > 0 ? ring : 0;
 			if (out) out[i] = env > v ? env : v;
 		}
 		this.gapEnv = env < 1e-6 ? 0 : env;
@@ -461,11 +464,31 @@ export class Song {
 		}
 
 		let peak = 0;
+		let broken = false;
 		for (let i = 0; i < n; i++) {
 			const a = Math.max(Math.abs(L[i]), Math.abs(R[i]));
 			if (a > peak) peak = a;
+			if (!(a < BROKEN_LEVEL)) broken = true;
+		}
+		// An invalid sample would stay in the browser's own filters downstream and
+		// silence everything after them for good. Drop the block and start the
+		// instrument afresh instead.
+		if (broken) {
+			L.fill(0, 0, n);
+			if (R !== L) R.fill(0, 0, n);
+			this.renew(layer);
+			peak = 0;
 		}
 		if (peak > this.levels[index]) this.levels[index] = peak;
+	}
+
+	// Replaces a layer's instrument with a fresh one of the same kind and settings.
+	renew(layer) {
+		const fresh = createEngine(layer.engineId, this.sr, this.ctx);
+		fresh.setParams(layer.engine.params);
+		layer.engine = fresh;
+		layer.retired = null;
+		if (layer.look) layer.look = new Lookahead(this.lookahead);
 	}
 
 	takeNotes() {

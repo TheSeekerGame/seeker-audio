@@ -207,6 +207,30 @@ for (const id of INSTRUMENT_ORDER) {
 
 // Every bass model, under random settings anywhere in range, stays finite,
 // audible, bounded, and on pitch; glide lands exactly on the next note.
+// Every instrument renders any range it is given: the drums' pre-roll asks for
+// a whole look-ahead at once, and odd sizes happen around note starts.
+console.log('render ranges');
+{
+	const SIZES = [480, 37, 200, 128, 1, 300];
+	for (const id of INSTRUMENT_ORDER) {
+		const engine = createEngine(id, SR, { ...ctx, sidechain: new Float32Array(512) });
+		const drums = !!INSTRUMENTS[id].drums;
+		const L = new Float32Array(512);
+		const R = new Float32Array(512);
+		let bad = 0;
+		for (let k = 0; k < 400; k++) {
+			if (k % 20 === 0) for (let row = 0; row < 3; row++) engine.noteOn(drums ? 0 : indexFrequency(palette, row * 2, 2), 0.9, SR / 4, -1, drums ? (row + k) % 8 : row);
+			const size = SIZES[k % SIZES.length];
+			L.fill(0);
+			R.fill(0);
+			engine.process(L, R, 0, size);
+			for (let i = 0; i < size; i++) if (!Number.isFinite(L[i]) || !Number.isFinite(R[i])) bad++;
+		}
+		check(bad === 0, `${id}: ${bad} invalid samples when rendered in uneven ranges`);
+	}
+	console.log('  every instrument renders uneven ranges cleanly');
+}
+
 console.log('bass models');
 {
 	const models = INSTRUMENTS.bass.params.find((q) => q.id === 'model').options;

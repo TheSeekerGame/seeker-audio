@@ -27,6 +27,11 @@ export class Voice {
 	render() {}
 }
 
+// The longest range rendered in one pass. A longer one (the drums' pre-roll
+// renders a whole look-ahead at once) is split, since voices may keep scratch
+// buffers of one block.
+export const MAX_BLOCK = 128;
+
 export class PolyEngine {
 	constructor(sr, ctx, voices, defaults) {
 		this.sr = sr;
@@ -102,6 +107,10 @@ export class PolyEngine {
 	}
 
 	process(L, R, start, end) {
+		if (end - start > MAX_BLOCK) {
+			for (let s = start; s < end; s += MAX_BLOCK) this.process(L, R, s, Math.min(end, s + MAX_BLOCK));
+			return;
+		}
 		let any = false;
 		for (const v of this.voices) {
 			if (!v.active) continue;
