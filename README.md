@@ -4,7 +4,7 @@ A music studio that runs entirely in the browser, where every note is a harmonic
 
 **Play it at <https://theseekergame.github.io/seeker-audio/>.**
 
-SEEKER is part of [The Seeker](https://github.com/TheSeekerGame/TheSeeker) and uses the same 48 Hz tuning as the game's music. It has ten synthesized instruments (modal bells, plucked strings, electric piano, additive organ, choir, pads, fourteen kinds of bass, wind, nine drum kits, and grain clouds), tuned resonators and a rhythmic harmonic pitch shifter among its effects, a song generator with eleven styles, and stem export.
+SEEKER is part of [The Seeker](https://github.com/TheSeekerGame/the-seeker) and uses the same 48 Hz tuning as the game's music. It has ten synthesized instruments (modal bells, plucked strings, electric piano, additive organ, choir, pads, fourteen kinds of bass, wind, nine drum kits, and grain clouds), tuned resonators and a rhythmic harmonic pitch shifter among its effects, a song generator with eleven styles, and stem export.
 
 ## The tuning
 
